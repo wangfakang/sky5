@@ -1,0 +1,137 @@
+<!doctype html>
+<html>
+  <head>
+    <meta charset="utf-8">
+    <meta http-equiv="X-UA-Compatible" content="chrome=1">
+    <title>Sky5 by wangfakang</title>
+
+    <link rel="stylesheet" href="stylesheets/styles.css">
+    <link rel="stylesheet" href="stylesheets/github-light.css">
+    <script src="javascripts/scale.fix.js"></script>
+    <meta name="viewport" content="width=device-width, initial-scale=1, user-scalable=no">
+    <!--[if lt IE 9]>
+    <script src="//html5shiv.googlecode.com/svn/trunk/html5.js"></script>
+    <![endif]-->
+  </head>
+  <body>
+    <div class="wrapper">
+      <header>
+        <h1 class="header">Sky5</h1>
+        <p class="header">proxy_pass  set var 　proxy_pass 后面跟变量和常量对性能的影响</p>
+
+        <ul>
+          <li class="download"><a class="buttons" href="https://github.com/wangfakang/sky5/zipball/master">Download ZIP</a></li>
+          <li class="download"><a class="buttons" href="https://github.com/wangfakang/sky5/tarball/master">Download TAR</a></li>
+          <li><a class="buttons github" href="https://github.com/wangfakang/sky5">View On GitHub</a></li>
+        </ul>
+
+        <p class="header">This project is maintained by <a class="header name" href="https://github.com/wangfakang">wangfakang</a></p>
+
+
+      </header>
+      <section>
+        <p><code>proxy_pass后面使用变量时性能的影响的分析：
+</code></p>
+
+<p>proxy_pass后面使用变量时性能的影响:</p>
+
+<h1>
+<a id="１在proxy_pass模块中后面跟变量与常量的区别------" class="anchor" href="#%EF%BC%91%E5%9C%A8proxy_pass%E6%A8%A1%E5%9D%97%E4%B8%AD%E5%90%8E%E9%9D%A2%E8%B7%9F%E5%8F%98%E9%87%8F%E4%B8%8E%E5%B8%B8%E9%87%8F%E7%9A%84%E5%8C%BA%E5%88%AB------" aria-hidden="true"><span class="octicon octicon-link"></span></a>１．在proxy_pass模块中后面跟变量与常量的区别：      </h1>
+
+<pre><code>(1).如果在proxy_pass后面给的是一个具体的upstream，则nginx在proxy_pass模块的
+时候会设置proxy_length为null则后面就不会执行ngx_http_proxy_eval就导致resolved
+为null，则在upstream模块的时候ngx_http_upstream_init_request中就直接执行
+uscf = u-&gt;conf-&gt;upstream不会去遍历upstream list.
+(2).否则在proxy_pass中ngx_http_script_variables_count中统计变量的个数是不为０的，
+则会执行ngx_http_script_compile函数会执行ngx_http_script_init_arrys函数(这个函
+数会进行相关变量长度的分配工作)，最后在ngx_http_proxy_handler中判断其proxy_length
+进行执行ngx_http_proxy_eval函数，在这个函数中会调用ngx_parse_url函数进行相关url的
+解析工作而且还会为resolved进行分配空间，最后在upstream模块中调用
+ngx_http_upstream_init_request中就会去访问相应的upstream　list从而来进行判断
+（umcf-&gt;upstreams.elts）当proxy_pass后面给的是变量的时候根据上面知道，没来一个
+请求的时候就会去遍历upstream list，这样会是qps的一个性能瓶颈，在tengine中为了解
+决这个问题，使用了red_black_tree来解决这个问题－－－使用红黑树来存储upstream.
+</code></pre>
+
+<h1>
+<a id="２proxy_pass后面的url最后有反斜杠的区别----" class="anchor" href="#%EF%BC%92proxy_pass%E5%90%8E%E9%9D%A2%E7%9A%84url%E6%9C%80%E5%90%8E%E6%9C%89%E5%8F%8D%E6%96%9C%E6%9D%A0%E7%9A%84%E5%8C%BA%E5%88%AB----" aria-hidden="true"><span class="octicon octicon-link"></span></a>２．proxy_pass后面的url最后有反斜杠的区别：    </h1>
+
+<pre><code>当proxy_pass后面给的url有加反斜杠的时候，此时不会把当前location中的path加到proxy_pass后面，
+否则会加上的．
+</code></pre>
+
+<h1>
+<a id="３什么时候proxy_pass后面必须要给一个变量-" class="anchor" href="#%EF%BC%93%E4%BB%80%E4%B9%88%E6%97%B6%E5%80%99proxy_pass%E5%90%8E%E9%9D%A2%E5%BF%85%E9%A1%BB%E8%A6%81%E7%BB%99%E4%B8%80%E4%B8%AA%E5%8F%98%E9%87%8F-" aria-hidden="true"><span class="octicon octicon-link"></span></a>３．什么时候proxy_pass后面必须要给一个变量： </h1>
+
+<pre><code>什么时候需要使用变量，那就看看使用变量与否的区别是啥就一目了然了．
+</code></pre>
+
+<h1>
+<a id="４相关防盗链摘自知道" class="anchor" href="#%EF%BC%94%E7%9B%B8%E5%85%B3%E9%98%B2%E7%9B%97%E9%93%BE%E6%91%98%E8%87%AA%E7%9F%A5%E9%81%93" aria-hidden="true"><span class="octicon octicon-link"></span></a>４．相关防盗链（摘自知道）:</h1>
+
+<pre><code>(1).nginx为了实现反向代理的需求而增加了一个ngx_http_proxy_module模块。
+其中proxy_set_header指令就是该模块需要读取的配置文件。在这里，所有设置
+的值的含义和http请求同中的含义完全相同，除了Host外还有X-Forward-For。
+Host的含义是表明请求的主机名，因为nginx作为反向代理使用，而如果后端真
+是的服务器设置有类似防盗链或者根据http请求头中的host字段来进行路由或
+判断功能的话，如果反向代理层的nginx不重写请求头中的host字段，将会导致
+请求失败【默认反向代理服务器会向后端真实服务器发送请求，并且请求头中的
+host字段应为proxy_pass指令设置的服务器】。
+(2).同理，X_Forward_For字段表示该条http请求是有谁发起的？如果反向代理服务
+器不重写该请求头的话，那么后端真实服务器在处理时会认为所有的请求都来在反向
+代理服务器，如果后端有防攻击策略的话，那么机器就被封掉了。因此，在配置用作
+反向代理的nginx中一般会增加两条配置，修改http的请求头：
+proxy_set_header Host $http_host;
+proxy_set_header X-Forward-For $remote_addr;
+
+(3).这里的$http_host和$remote_addr都是nginx的导出变量，可以再配置文件中直接
+使用。如果Host请求头部没有出现在请求头中，则$http_host值为空，但是$host值为
+主域名。因此，一般而言，会用$host代替$http_host变量，从而避免http请求中丢失
+Host头部的情况下Host不被重写的失误．
+</code></pre>
+
+<h2>
+<a id="有问题反馈" class="anchor" href="#%E6%9C%89%E9%97%AE%E9%A2%98%E5%8F%8D%E9%A6%88" aria-hidden="true"><span class="octicon octicon-link"></span></a>有问题反馈</h2>
+
+<p>在使用中有任何问题，欢迎反馈给我，可以用以下联系方式跟我交流</p>
+
+<ul>
+<li>邮件(1031379296#qq.com, 把#换成@)</li>
+<li>QQ: 1031379296</li>
+<li>weibo: <a href="http://weibo.com/u/2786211992/home">@王发康</a>
+</li>
+</ul>
+
+<h2>
+<a id="感激" class="anchor" href="#%E6%84%9F%E6%BF%80" aria-hidden="true"><span class="octicon octicon-link"></span></a>感激</h2>
+
+<h3>
+<a id="chunshengsteratgmailcom" class="anchor" href="#chunshengsteratgmailcom" aria-hidden="true"><span class="octicon octicon-link"></span></a>chunshengsterATgmail.com</h3>
+
+<h2>
+<a id="关于作者" class="anchor" href="#%E5%85%B3%E4%BA%8E%E4%BD%9C%E8%80%85" aria-hidden="true"><span class="octicon octicon-link"></span></a>关于作者</h2>
+
+<h3>
+<a id="linuxnginxgolangcc爱好者" class="anchor" href="#linuxnginxgolangcc%E7%88%B1%E5%A5%BD%E8%80%85" aria-hidden="true"><span class="octicon octicon-link"></span></a>Linux\nginx\golang\c\c++爱好者</h3>
+
+<h3>
+<a id="欢迎一起交流--一起学习" class="anchor" href="#%E6%AC%A2%E8%BF%8E%E4%B8%80%E8%B5%B7%E4%BA%A4%E6%B5%81--%E4%B8%80%E8%B5%B7%E5%AD%A6%E4%B9%A0" aria-hidden="true"><span class="octicon octicon-link"></span></a>欢迎一起交流  一起学习#</h3>
+      </section>
+      <footer>
+        <p><small>Hosted on <a href="https://pages.github.com">GitHub Pages</a> using the Dinky theme</small></p>
+      </footer>
+    </div>
+    <!--[if !IE]><script>fixScale(document);</script><![endif]-->
+		          <script type="text/javascript">
+            var gaJsHost = (("https:" == document.location.protocol) ? "https://ssl." : "http://www.");
+            document.write(unescape("%3Cscript src='" + gaJsHost + "google-analytics.com/ga.js' type='text/javascript'%3E%3C/script%3E"));
+          </script>
+          <script type="text/javascript">
+            try {
+              var pageTracker = _gat._getTracker("proxy_pass  set var 　proxy_pass 后面跟变量和常量对性能的影响");
+            pageTracker._trackPageview();
+            } catch(err) {}
+          </script>
+
+  </body>
+</html>
