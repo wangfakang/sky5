@@ -36,7 +36,7 @@
 <p>proxy_pass后面使用变量时性能的影响:</p>
 
 <h1>
-<a id="１在proxy_pass模块中后面跟变量与常量的区别------" class="anchor" href="#%EF%BC%91%E5%9C%A8proxy_pass%E6%A8%A1%E5%9D%97%E4%B8%AD%E5%90%8E%E9%9D%A2%E8%B7%9F%E5%8F%98%E9%87%8F%E4%B8%8E%E5%B8%B8%E9%87%8F%E7%9A%84%E5%8C%BA%E5%88%AB------" aria-hidden="true"><span class="octicon octicon-link"></span></a>１．在proxy_pass模块中后面跟变量与常量的区别：      </h1>
+<a id="１在proxy_pass模块中后面跟变量与常量的区别------" class="anchor" href="#%EF%BC%91%E5%9C%A8proxy_pass%E6%A8%A1%E5%9D%97%E4%B8%AD%E5%90%8E%E9%9D%A2%E8%B7%9F%E5%8F%98%E9%87%8F%E4%B8%8E%E5%B8%B8%E9%87%8F%E7%9A%84%E5%8C%BA%E5%88%AB------" aria-hidden="true"><span aria-hidden="true" class="octicon octicon-link"></span></a>１．在proxy_pass模块中后面跟变量与常量的区别：      </h1>
 
 <pre><code>(1).如果在proxy_pass后面给的是一个具体的upstream，则nginx在proxy_pass模块的
 时候会设置proxy_length为null则后面就不会执行ngx_http_proxy_eval就导致resolved
@@ -51,23 +51,26 @@ ngx_http_upstream_init_request中就会去访问相应的upstream　list从而�
 （umcf-&gt;upstreams.elts）当proxy_pass后面给的是变量的时候根据上面知道，没来一个
 请求的时候就会去遍历upstream list，这样会是qps的一个性能瓶颈，在tengine中为了解
 决这个问题，使用了red_black_tree来解决这个问题－－－使用红黑树来存储upstream.
+（3）.还有一个区别就是如果proxy_pass后面这个是变量，而且是一个域名的话则在后面访问
+的时候都会去重新解析该域名的ip（有效期是TTL），注意如果某个时候域名解析服务器出错了
+则会导致用户访问直接502.
 </code></pre>
 
 <h1>
-<a id="２proxy_pass后面的url最后有反斜杠的区别----" class="anchor" href="#%EF%BC%92proxy_pass%E5%90%8E%E9%9D%A2%E7%9A%84url%E6%9C%80%E5%90%8E%E6%9C%89%E5%8F%8D%E6%96%9C%E6%9D%A0%E7%9A%84%E5%8C%BA%E5%88%AB----" aria-hidden="true"><span class="octicon octicon-link"></span></a>２．proxy_pass后面的url最后有反斜杠的区别：    </h1>
+<a id="２proxy_pass后面的url最后有反斜杠的区别----" class="anchor" href="#%EF%BC%92proxy_pass%E5%90%8E%E9%9D%A2%E7%9A%84url%E6%9C%80%E5%90%8E%E6%9C%89%E5%8F%8D%E6%96%9C%E6%9D%A0%E7%9A%84%E5%8C%BA%E5%88%AB----" aria-hidden="true"><span aria-hidden="true" class="octicon octicon-link"></span></a>２．proxy_pass后面的url最后有反斜杠的区别：    </h1>
 
 <pre><code>当proxy_pass后面给的url有加反斜杠的时候，此时不会把当前location中的path加到proxy_pass后面，
 否则会加上的．
 </code></pre>
 
 <h1>
-<a id="３什么时候proxy_pass后面必须要给一个变量-" class="anchor" href="#%EF%BC%93%E4%BB%80%E4%B9%88%E6%97%B6%E5%80%99proxy_pass%E5%90%8E%E9%9D%A2%E5%BF%85%E9%A1%BB%E8%A6%81%E7%BB%99%E4%B8%80%E4%B8%AA%E5%8F%98%E9%87%8F-" aria-hidden="true"><span class="octicon octicon-link"></span></a>３．什么时候proxy_pass后面必须要给一个变量： </h1>
+<a id="３什么时候proxy_pass后面必须要给一个变量-" class="anchor" href="#%EF%BC%93%E4%BB%80%E4%B9%88%E6%97%B6%E5%80%99proxy_pass%E5%90%8E%E9%9D%A2%E5%BF%85%E9%A1%BB%E8%A6%81%E7%BB%99%E4%B8%80%E4%B8%AA%E5%8F%98%E9%87%8F-" aria-hidden="true"><span aria-hidden="true" class="octicon octicon-link"></span></a>３．什么时候proxy_pass后面必须要给一个变量： </h1>
 
 <pre><code>什么时候需要使用变量，那就看看使用变量与否的区别是啥就一目了然了．
 </code></pre>
 
 <h1>
-<a id="４相关防盗链摘自知道" class="anchor" href="#%EF%BC%94%E7%9B%B8%E5%85%B3%E9%98%B2%E7%9B%97%E9%93%BE%E6%91%98%E8%87%AA%E7%9F%A5%E9%81%93" aria-hidden="true"><span class="octicon octicon-link"></span></a>４．相关防盗链（摘自知道）:</h1>
+<a id="４相关防盗链摘自知道" class="anchor" href="#%EF%BC%94%E7%9B%B8%E5%85%B3%E9%98%B2%E7%9B%97%E9%93%BE%E6%91%98%E8%87%AA%E7%9F%A5%E9%81%93" aria-hidden="true"><span aria-hidden="true" class="octicon octicon-link"></span></a>４．相关防盗链（摘自知道）:</h1>
 
 <pre><code>(1).nginx为了实现反向代理的需求而增加了一个ngx_http_proxy_module模块。
 其中proxy_set_header指令就是该模块需要读取的配置文件。在这里，所有设置
@@ -91,7 +94,7 @@ Host头部的情况下Host不被重写的失误．
 </code></pre>
 
 <h2>
-<a id="有问题反馈" class="anchor" href="#%E6%9C%89%E9%97%AE%E9%A2%98%E5%8F%8D%E9%A6%88" aria-hidden="true"><span class="octicon octicon-link"></span></a>有问题反馈</h2>
+<a id="有问题反馈" class="anchor" href="#%E6%9C%89%E9%97%AE%E9%A2%98%E5%8F%8D%E9%A6%88" aria-hidden="true"><span aria-hidden="true" class="octicon octicon-link"></span></a>有问题反馈</h2>
 
 <p>在使用中有任何问题，欢迎反馈给我，可以用以下联系方式跟我交流</p>
 
@@ -103,19 +106,19 @@ Host头部的情况下Host不被重写的失误．
 </ul>
 
 <h2>
-<a id="感激" class="anchor" href="#%E6%84%9F%E6%BF%80" aria-hidden="true"><span class="octicon octicon-link"></span></a>感激</h2>
+<a id="感激" class="anchor" href="#%E6%84%9F%E6%BF%80" aria-hidden="true"><span aria-hidden="true" class="octicon octicon-link"></span></a>感激</h2>
 
 <h3>
-<a id="chunshengsteratgmailcom" class="anchor" href="#chunshengsteratgmailcom" aria-hidden="true"><span class="octicon octicon-link"></span></a>chunshengsterATgmail.com</h3>
+<a id="chunshengsteratgmailcom" class="anchor" href="#chunshengsteratgmailcom" aria-hidden="true"><span aria-hidden="true" class="octicon octicon-link"></span></a>chunshengsterATgmail.com</h3>
 
 <h2>
-<a id="关于作者" class="anchor" href="#%E5%85%B3%E4%BA%8E%E4%BD%9C%E8%80%85" aria-hidden="true"><span class="octicon octicon-link"></span></a>关于作者</h2>
+<a id="关于作者" class="anchor" href="#%E5%85%B3%E4%BA%8E%E4%BD%9C%E8%80%85" aria-hidden="true"><span aria-hidden="true" class="octicon octicon-link"></span></a>关于作者</h2>
 
 <h3>
-<a id="linuxnginxgolangcc爱好者" class="anchor" href="#linuxnginxgolangcc%E7%88%B1%E5%A5%BD%E8%80%85" aria-hidden="true"><span class="octicon octicon-link"></span></a>Linux\nginx\golang\c\c++爱好者</h3>
+<a id="linuxnginxgolangcc爱好者" class="anchor" href="#linuxnginxgolangcc%E7%88%B1%E5%A5%BD%E8%80%85" aria-hidden="true"><span aria-hidden="true" class="octicon octicon-link"></span></a>Linux\nginx\golang\c\c++爱好者</h3>
 
 <h3>
-<a id="欢迎一起交流--一起学习" class="anchor" href="#%E6%AC%A2%E8%BF%8E%E4%B8%80%E8%B5%B7%E4%BA%A4%E6%B5%81--%E4%B8%80%E8%B5%B7%E5%AD%A6%E4%B9%A0" aria-hidden="true"><span class="octicon octicon-link"></span></a>欢迎一起交流  一起学习#</h3>
+<a id="欢迎一起交流--一起学习" class="anchor" href="#%E6%AC%A2%E8%BF%8E%E4%B8%80%E8%B5%B7%E4%BA%A4%E6%B5%81--%E4%B8%80%E8%B5%B7%E5%AD%A6%E4%B9%A0" aria-hidden="true"><span aria-hidden="true" class="octicon octicon-link"></span></a>欢迎一起交流  一起学习#</h3>
       </section>
       <footer>
         <p><small>Hosted on <a href="https://pages.github.com">GitHub Pages</a> using the Dinky theme</small></p>
